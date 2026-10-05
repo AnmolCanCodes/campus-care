@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Submit a complaint · College Care{% endblock %}
+{% block content %}
+<section class="wrap page-head">
+  <h1 class="page-title">Submit a complaint</h1>
+  <p class="lead">Something isn't working? Describe the issue in your own words. We'll help turn it into a clear formal complaint.</p>
+</section>
+
+<div class="wrap">
+  {% if ai_error %}
+  <div class="notice notice-error" role="alert">
+    <strong>We couldn't generate the complaint right now.</strong>
+    <p>{{ ai_error }} Your original complaint has not been lost. It is still filled in below.</p>
+  </div>
+  {% elif errors %}
+  <div class="notice notice-error" role="alert">
+    <strong>Check the highlighted fields.</strong>
+    <p>Some details are missing or look wrong. Nothing was sent.</p>
+  </div>
+  {% endif %}
+
+  <form method="post" action="/complaint" class="form-grid" data-loading-form novalidate>
+    <fieldset class="col-details">
+      <legend class="section-title">Your details</legend>
+
+      <div class="field">
+        <label for="name">Full name</label>
+        <input id="name" name="name" type="text" autocomplete="name" placeholder="Rahul Kumar" value="{{ values.name }}" required{% if errors.name %} aria-invalid="true" aria-describedby="err-name"{% endif %}>
+        {% if errors.name %}<p class="field-error" id="err-name">{{ errors.name }}</p>{% endif %}
+      </div>
+      <div class="field">
+        <label for="roll_number">Roll number</label>
+        <input id="roll_number" name="roll_number" type="text" placeholder="23BCA102" value="{{ values.roll_number }}" required{% if errors.roll_number %} aria-invalid="true" aria-describedby="err-roll"{% endif %}>
+        {% if errors.roll_number %}<p class="field-error" id="err-roll">{{ errors.roll_number }}</p>{% endif %}
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="course">Course</label>
+          <input id="course" name="course" type="text" placeholder="BCA" value="{{ values.course }}" required{% if errors.course %} aria-invalid="true" aria-describedby="err-course"{% endif %}>
+          {% if errors.course %}<p class="field-error" id="err-course">{{ errors.course }}</p>{% endif %}
+        </div>
+        <div class="field">
+          <label for="semester">Semester</label>
+          <select id="semester" name="semester" required{% if errors.semester %} aria-invalid="true" aria-describedby="err-semester"{% endif %}>
+            <option value="">Select</option>
+            {% for s in semesters %}<option value="{{ s }}"{% if values.semester == s|string %} selected{% endif %}>{{ s }}</option>{% endfor %}
+          </select>
+          {% if errors.semester %}<p class="field-error" id="err-semester">{{ errors.semester }}</p>{% endif %}
+        </div>
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="rahul@example.com" value="{{ values.email }}" required{% if errors.email %} aria-invalid="true" aria-describedby="err-email"{% endif %}>
+        {% if errors.email %}<p class="field-error" id="err-email">{{ errors.email }}</p>{% endif %}
+      </div>
+    </fieldset>
+
+    <fieldset class="col-complaint">
+      <legend class="section-title">The complaint</legend>
+
+      <div class="field">
+        <label for="category">Category</label>
+        <select id="category" name="category" required{% if errors.category %} aria-invalid="true" aria-describedby="err-category"{% endif %}>
+          <option value="">Select a category</option>
+          {% for c in categories %}<option value="{{ c }}"{% if values.category == c %} selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+        {% if errors.category %}<p class="field-error" id="err-category">{{ errors.category }}</p>{% endif %}
+      </div>
+      <div class="field">
+        <label for="subject">Subject</label>
+        <input id="subject" name="subject" type="text" maxlength="120" placeholder="Computers not working in the lab" value="{{ values.subject }}" required{% if errors.subject %} aria-invalid="true" aria-describedby="err-subject"{% endif %}>
+        {% if errors.subject %}<p class="field-error" id="err-subject">{{ errors.subject }}</p>{% endif %}
+      </div>
+      <div class="field">
+        <label for="description">Describe your issue</label>
+        <textarea id="description" name="description" class="anchor-text" rows="10" maxlength="2000" data-counter="description-count" placeholder="Tell us what happened. Who is affected, where, and since when?" required aria-describedby="description-hint{% if errors.description %} err-description{% endif %}"{% if errors.description %} aria-invalid="true"{% endif %}>{{ values.description }}</textarea>
+        <p class="hint" id="description-hint"><span id="description-count">0 / 2000</span> · Stick to what actually happened. The AI will not add anything you didn't say.</p>
+        {% if errors.description %}<p class="field-error" id="err-description">{{ errors.description }}</p>{% endif %}
+      </div>
+
+      <div class="actions" data-actions>
+        <button type="submit" class="btn btn-primary">Generate complaint</button>
+        <p class="hint">Next: you review the generated complaint before anything is sent.</p>
+      </div>
+      <div class="status" data-status hidden role="status" aria-live="polite">
+        <strong>Generating complaint</strong>
+        <ul data-status-lines></ul>
+      </div>
+    </fieldset>
+  </form>
+</div>
+{% endblock %}

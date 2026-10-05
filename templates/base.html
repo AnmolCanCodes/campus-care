@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}College Care{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="/">College Care</a>
+      <nav aria-label="Main">
+        <a href="/complaint">Complaint</a>
+        <a href="/#about">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% set rants = recent_rants() %}
+  {% if rants %}
+  {% set items = rants * ((8 // rants|length) + 1) %}
+  <a class="ticker" href="/rants" aria-label="Read all anonymous rants from students">
+    <span class="ticker-label">Rant wall</span>
+    <span class="ticker-window">
+      <span class="ticker-track" style="--t: {{ items|length * 6 }}s">
+        {% for r in items %}<span class="ticker-item">{{ r }}</span>{% endfor %}
+        {% for r in items %}<span class="ticker-item" aria-hidden="true">{{ r }}</span>{% endfor %}
+      </span>
+    </span>
+  </a>
+  {% endif %}
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>A BCA minor project. AI-written complaints should always be read by you before they are sent.</p>
+    </div>
+  </footer>
+  <script src="{{ url_for('static', path='js/script.js') }}" defer></script>
+</body>
+</html>

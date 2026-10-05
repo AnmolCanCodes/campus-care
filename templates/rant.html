@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Rant &amp; Vent · College Care{% endblock %}
+{% block body_class %}rant{% endblock %}
+{% block content %}
+<div class="wrap rant-grid">
+  <section class="rant-intro">
+    <p class="kicker reveal">Rant &amp; Vent</p>
+    <h1 class="display"><span class="line"><span style="--i:0">Say it.<span class="blink" aria-hidden="true"></span></span></span></h1>
+    <p class="lead reveal" style="--d:400ms">You don't have to write formally here. Got something to say about college?</p>
+    <ul class="rules">
+      <li class="reveal" style="--d:550ms">No name.</li>
+      <li class="reveal" style="--d:700ms">No roll number.</li>
+      <li class="reveal" style="--d:850ms">No formal language required.</li>
+    </ul>
+    <p class="note reveal" style="--d:1000ms">Don't post passwords or anyone's personal details. This is not the place for a formal complaint. Those go through <a href="/complaint">the complaint form</a>.</p>
+  </section>
+
+  <section class="rant-form reveal" style="--d:300ms" aria-label="Write a rant">
+    {% if posted %}
+    <div class="notice notice-ok reveal" role="status">
+      <strong>Posted.</strong>
+      <p>No name or roll number was saved with it. See it on the <a href="/rants">rant wall</a>, or keep going.</p>
+    </div>
+    {% endif %}
+    {% if error %}
+    <div class="notice notice-error" role="alert"><strong>{{ error }}</strong></div>
+    {% endif %}
+
+    <form method="post" action="/rantventkaro" novalidate>
+      <div class="field">
+        <label for="content">What's on your mind?</label>
+        <textarea id="content" name="content" class="anchor-text" rows="12" maxlength="{{ rant_max }}" data-counter="rant-count" data-placeholders='{{ placeholders|tojson }}' placeholder="{{ placeholders[0] }}" required>{{ content }}</textarea>
+        <p class="hint"><span id="rant-count">0 / {{ rant_max }}</span> · <a href="/rants">Read what others posted</a></p>
+      </div>
+      <div class="actions"><button type="submit" class="btn btn-primary">Post anonymously</button></div>
+    </form>
+  </section>
+</div>
+{% endblock %}

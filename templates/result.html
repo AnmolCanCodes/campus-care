@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Your complaint · College Care{% endblock %}
+{% block content %}
+{% if not complaint %}
+<section class="wrap page-head">
+  <h1 class="page-title">Nothing here yet.</h1>
+  <p class="lead">Once you submit a complaint, your generated complaint will appear here.</p>
+  <p><a class="btn btn-primary" href="/complaint">Submit a complaint</a></p>
+</section>
+{% else %}
+<section class="wrap page-head">
+  <h1 class="page-title">Complaint generated</h1>
+  <p class="lead">Read it through. Fix anything that doesn't sound right in your email app before you send.</p>
+</section>
+
+<div class="wrap">
+  {% if error %}
+  <div class="notice notice-error" role="alert">
+    <strong>We couldn't regenerate the complaint.</strong>
+    <p>{{ error }} The version below is unchanged.</p>
+  </div>
+  {% endif %}
+
+  <div class="result-grid">
+    <dl class="meta">
+      <div><dt>Priority</dt>
+        <dd><span class="priority priority-{{ complaint.priority|lower }}"><span class="dot" aria-hidden="true"></span>{{ complaint.priority }}</span>
+        <small>Suggested by the AI. You can change it in the email.</small></dd></div>
+      <div><dt>Category</dt><dd>{{ complaint.category }}</dd></div>
+      <div><dt>Filed by</dt><dd>{{ complaint.student.name }}<br><small>{{ complaint.student.roll_number }}</small></dd></div>
+      <div><dt>Saved on</dt><dd>{{ complaint.created_at.strftime('%d %b %Y, %I:%M %p') }}</dd></div>
+      <div><dt>Your original subject</dt><dd>{{ complaint.subject }}</dd></div>
+    </dl>
+
+    <div>
+      <article class="document" aria-label="Generated complaint email">
+        <dl class="doc-head">
+          <div><dt>To</dt><dd>{{ hod_email }}</dd></div>
+          <div><dt>Subject</dt><dd>{{ complaint.ai_subject }}</dd></div>
+        </dl>
+        <div class="doc-body">{{ complaint.ai_email }}</div>
+      </article>
+
+      <textarea id="copy-source" hidden readonly>Subject: {{ complaint.ai_subject }}
+
+{{ complaint.ai_email }}</textarea>
+
+      <div class="actions actions-split">
+        <button type="button" class="btn btn-secondary" data-copy="copy-source">Copy</button>
+        <div class="actions-group">
+          <form method="post" action="/generate" data-loading-form>
+            <input type="hidden" name="complaint_id" value="{{ complaint.id }}">
+            <button type="submit" class="btn btn-ghost" data-actions>Regenerate</button>
+          </form>
+          <a class="btn btn-primary" href="{{ mailto }}">Send to HOD</a>
+        </div>
+      </div>
+      <p class="hint" data-copy-status role="status" aria-live="polite">Send to HOD opens your email app with this message filled in. Nothing is sent until you press send there.</p>
+      <p class="hint"><a href="/complaint">Write a different complaint</a></p>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

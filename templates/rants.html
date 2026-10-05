@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Rant wall · College Care{% endblock %}
+{% block body_class %}rant{% endblock %}
+{% block content %}
+<div class="wrap rant-grid">
+  <section class="rant-intro sticky-intro">
+    <p class="kicker reveal">Rant wall</p>
+    <h1 class="page-title reveal" style="--d:100ms">What students are saying.</h1>
+    <p class="lead reveal" style="--d:250ms">Every post here is anonymous. No names, no roll numbers.</p>
+    <p class="reveal" style="--d:400ms"><a class="btn btn-primary" href="/rantventkaro">Write your own</a></p>
+    <p class="note reveal" style="--d:500ms">Posts are not moderated yet, so keep it honest and keep it decent.</p>
+  </section>
+
+  <section aria-label="All rants">
+    {% if rants %}
+    <ol class="wall">
+      {% for r in rants %}
+      <li class="reveal" style="--d: {{ ([loop.index0, 12]|min) * 60 }}ms">
+        <p class="wall-text">{{ r.content }}</p>
+        <time datetime="{{ r.created_at.isoformat() }}">{{ r.created_at.strftime('%d %b %Y, %I:%M %p') }}</time>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <div class="notice reveal">
+      <strong>Nothing here yet.</strong>
+      <p>Once someone posts a rant, it will show up on this wall. <a href="/rantventkaro">Be the first to say it.</a></p>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

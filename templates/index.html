@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}College Care: report the problem, clearly{% endblock %}
+{% block content %}
+<section class="wrap hero">
+  <div class="hero-main">
+    <h1 class="display">
+      <span class="line"><span style="--i:0">Report the</span></span>
+      <span class="line"><span style="--i:1">problem.</span></span>
+      <span class="line"><span style="--i:2">Clearly.</span></span>
+    </h1>
+    <p class="lead reveal" style="--d:450ms">A simple way for students to report college-related issues and turn them into professional complaints.</p>
+    <p class="reveal" style="--d:600ms"><a class="btn btn-primary" href="/complaint">Submit a complaint</a></p>
+
+    <div class="reveal" style="--d:800ms">
+      <h2 class="section-title">What you can report</h2>
+      <ul class="category-list">
+        {% for c in categories %}<li>{{ c }}</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <aside class="hero-side" id="about" aria-labelledby="how-title">
+    <h2 class="section-title reveal" id="how-title" style="--d:500ms">How it works</h2>
+    <ol class="steps">
+      <li class="reveal" style="--d:650ms"><span class="step-num">1</span><div><strong>Describe the issue</strong><p>Write it the way you would tell a friend. Pick a category and add your details.</p></div></li>
+      <li class="reveal" style="--d:800ms"><span class="step-num">2</span><div><strong>AI structures the complaint</strong><p>It writes a formal subject and email, and suggests a priority. It does not add facts you did not give.</p></div></li>
+      <li class="reveal" style="--d:950ms"><span class="step-num">3</span><div><strong>Review and send to the HOD</strong><p>Your email app opens with everything filled in. You read it and press send.</p></div></li>
+    </ol>
+    <p class="note reveal" style="--d:1100ms">Your complaint is saved with your name and roll number so it can be traced. Nothing is sent until you send it yourself.</p>
+    <p class="whisper reveal" style="--d:1250ms">Not a complaint? Just want to say something? Type <span class="typed" data-typed aria-hidden="true">/rantventkaro</span><span class="sr-only">/rantventkaro</span><span class="blink" aria-hidden="true"></span> after the web address.</p>
+  </aside>
+</section>
+{% endblock %}
