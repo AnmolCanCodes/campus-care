@@ -109,16 +109,32 @@
     setTimeout(tick, 1900);
   });
 
-  // Rant box: rotate the placeholder while it is empty
+  // Rant box: swap prompts and label when the type changes, rotate while empty
   document.querySelectorAll('textarea[data-placeholders]').forEach(function (area) {
-    var list;
-    try { list = JSON.parse(area.dataset.placeholders); } catch (e) { return; }
-    if (!list || list.length < 2) return;
+    var sets;
+    try { sets = JSON.parse(area.dataset.placeholders); } catch (e) { return; }
+    var form = area.form;
+    var label = document.querySelector('label[for="' + area.id + '"]');
+    var LABELS = { rant: "What's on your mind?", confession: 'What do you want to confess?' };
+    var checked = form && form.querySelector('input[name="kind"]:checked');
+    var kind = checked ? checked.value : 'rant';
     var n = 0;
+
+    function apply() {
+      var list = sets[kind] || [];
+      if (list.length) area.placeholder = list[n % list.length];
+      if (label && LABELS[kind]) label.textContent = LABELS[kind];
+    }
+    if (form) {
+      form.querySelectorAll('input[name="kind"]').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+          if (radio.checked) { kind = radio.value; n = 0; apply(); }
+        });
+      });
+    }
     setInterval(function () {
       if (area.value !== '') return;
-      n = (n + 1) % list.length;
-      area.placeholder = list[n];
+      n += 1; apply();
     }, 3500);
   });
 })();

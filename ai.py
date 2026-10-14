@@ -3,18 +3,14 @@ import os
 import re
 from typing import Dict
 
-from openai import (
-    APIConnectionError,
-    AuthenticationError,
-    OpenAI,
-    OpenAIError,
-    RateLimitError,
-)
+import httpx
 
 
 class AIError(Exception):
     """Raised with a message that is safe to show to the student."""
 
+
+HF_URL = "https://router.huggingface.co/v1/chat/completions"
 
 SYSTEM_PROMPT = """You help college students turn informal complaints into clear, formal emails \
 addressed to the Head of Department (HOD).
@@ -31,7 +27,8 @@ with a polite closing request for action. Do NOT add a sign-off, name, or roll n
 the application adds those.
 6. Keep the body between 80 and 220 words.
 
-Reply with JSON only, using exactly these keys: "subject", "priority", "body"."""
+Reply with one JSON object and nothing else (no markdown, no code fences, no explanation), \
+using exactly these keys: "subject", "priority", "body"."""
 
 _SIGNOFF = re.compile(
     r"^(regards|warm regards|best regards|yours\s+\w+|sincerely|respectfully)[,.]?$", re.I
@@ -47,43 +44,62 @@ def _strip_signoff(body: str) -> str:
     return body.strip()
 
 
+def _parse_json(text: str) -> dict:
+    """Open models sometimes wrap JSON in <think> blocks or code fences. Dig it out."""
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.S)
+    start, end = text.find("{"), text.rfind("}")
+    if start == -1 or end <= start:
+        raise ValueError("no JSON object found")
+    return json.loads(text[start:end + 1], strict=False)
+
+
 def generate_complaint(
     *, name: str, roll_number: str, course: str, semester: int,
     category: str, subject: str, description: str,
 ) -> Dict[str, str]:
-    api_key = os.getenv("OPENAI_API_KEY", "").strip()
-    if not api_key or api_key == "your_api_key_here":
-        raise AIError("The AI service is not set up yet. Add your OPENAI_API_KEY to the .env file.")
+    token = (os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_API_KEY") or "").strip()
+    if not token or token.startswith("your_"):
+        raise AIError("The AI service is not set up yet. Add your HF_TOKEN to the .env file.")
+    model = os.getenv("HF_MODEL", "meta-llama/Llama-3.1-8B-Instruct").strip()
 
-    client = OpenAI(api_key=api_key, timeout=40.0, max_retries=1)
     user_message = (
         f"Student: {name}, {course}, semester {semester}\n"
         f"Category: {category}\n"
         f"Student's own subject: {subject}\n"
         f"Student's description:\n{description}"
     )
+    payload = {
+        "model": model,
+        "temperature": 0.3,
+        "max_tokens": 1200,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_message},
+        ],
+    }
 
     try:
-        response = client.chat.completions.create(
-            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-            temperature=0.3,
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_message},
-            ],
+        resp = httpx.post(
+            HF_URL, json=payload, headers={"Authorization": f"Bearer {token}"},
+            timeout=httpx.Timeout(28.0, connect=8.0),
         )
-    except AuthenticationError as exc:
-        raise AIError("The AI service rejected the API key. Check OPENAI_API_KEY in .env.") from exc
-    except RateLimitError as exc:
-        raise AIError("The AI service is busy or out of quota. Try again in a minute.") from exc
-    except APIConnectionError as exc:
+    except httpx.TimeoutException as exc:
+        raise AIError("The AI service took too long to answer. Please try again.") from exc
+    except httpx.HTTPError as exc:
         raise AIError("We couldn't reach the AI service. Check your connection and try again.") from exc
-    except OpenAIError as exc:
-        raise AIError("The AI service returned an error. Please try again.") from exc
+
+    if resp.status_code in (401, 403):
+        raise AIError("The AI service rejected the token. Check HF_TOKEN and its permissions.")
+    if resp.status_code == 429:
+        raise AIError("The AI service is busy or the free quota is used up. Try again later.")
+    if resp.status_code in (400, 404):
+        raise AIError(f"The model \"{model}\" isn't available. Set a different HF_MODEL in the settings.")
+    if resp.status_code >= 400:
+        raise AIError("The AI service returned an error. Please try again.")
 
     try:
-        data = json.loads(response.choices[0].message.content or "")
+        content = resp.json()["choices"][0]["message"]["content"] or ""
+        data = _parse_json(content)
         ai_subject = str(data["subject"]).strip()
         body = _strip_signoff(str(data["body"]))
         priority = str(data["priority"]).strip().capitalize()

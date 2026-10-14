@@ -135,22 +135,6 @@ Email Client
    |
    v
 HOD
-```
-
-### Anonymous Rant
-
-```text
-Student
-   |
-   v
-/ rantventkaro
-   |
-   v
-Anonymous Rant
-   |
-   v
-SQLite Database
-```
 
 ## Technology Stack
 
@@ -414,39 +398,6 @@ The Rant & Vent feature does not intentionally associate a rant with:
 * Email
 
 Students should not submit passwords, personal information, or sensitive information in anonymous rants.
-
-## Limitations
-
-This project is an MVP developed as a BCA Minor Project.
-
-Current limitations include:
-
-* No student authentication
-* No admin dashboard
-* No complaint status tracking
-* No Gmail API integration
-* No automatic email delivery
-* No advanced moderation system
-* No deployment-specific security configuration
-
-These features can be added in future versions.
-
-## Future Scope
-
-Possible future improvements include:
-
-* Student authentication
-* Admin dashboard
-* Complaint status tracking
-* Department-wise complaint routing
-* Email notifications
-* Complaint history
-* AI-based duplicate complaint detection
-* Automatic complaint categorization
-* Complaint analytics
-* Anonymous rant moderation
-* Mobile application
-* Role-based access control
 
 ## Objective
 

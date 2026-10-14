@@ -42,4 +42,5 @@ class Rant(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     content = Column(Text, nullable=False)
+    kind = Column(String(12), nullable=False, default="rant", server_default="rant")  # rant | confession
     created_at = Column(DateTime, default=datetime.now, nullable=False)

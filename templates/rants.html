@@ -11,11 +11,18 @@
     <p class="note reveal" style="--d:500ms">Posts are not moderated yet, so keep it honest and keep it decent.</p>
   </section>
 
-  <section aria-label="All rants">
+  <section aria-label="All posts">
+    <nav class="filters" aria-label="Filter posts">
+      <a href="/rants"{% if not active %} aria-current="page"{% endif %}>All</a>
+      <a href="/rants?kind=rant"{% if active == 'rant' %} aria-current="page"{% endif %}>Rants</a>
+      <a href="/rants?kind=confession"{% if active == 'confession' %} aria-current="page"{% endif %}>Confessions</a>
+    </nav>
+
     {% if rants %}
     <ol class="wall">
       {% for r in rants %}
       <li class="reveal" style="--d: {{ ([loop.index0, 12]|min) * 60 }}ms">
+        <span class="tag tag-{{ r.kind }}">{{ 'Confession' if r.kind == 'confession' else 'Rant' }}</span>
         <p class="wall-text">{{ r.content }}</p>
         <time datetime="{{ r.created_at.isoformat() }}">{{ r.created_at.strftime('%d %b %Y, %I:%M %p') }}</time>
       </li>
@@ -24,7 +31,7 @@
     {% else %}
     <div class="notice reveal">
       <strong>Nothing here yet.</strong>
-      <p>Once someone posts a rant, it will show up on this wall. <a href="/rantventkaro">Be the first to say it.</a></p>
+      <p>Once someone posts{% if active == 'confession' %} a confession{% elif active == 'rant' %} a rant{% endif %}, it will show up here. <a href="/rantventkaro?kind={{ active or 'rant' }}">Be the first to say it.</a></p>
     </div>
     {% endif %}
   </section>

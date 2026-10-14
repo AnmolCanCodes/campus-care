@@ -6,20 +6,20 @@
   <section class="rant-intro">
     <p class="kicker reveal">Rant &amp; Vent</p>
     <h1 class="display"><span class="line"><span style="--i:0">Say it.<span class="blink" aria-hidden="true"></span></span></span></h1>
-    <p class="lead reveal" style="--d:400ms">You don't have to write formally here. Got something to say about college?</p>
+    <p class="lead reveal" style="--d:400ms">You don't have to write formally here. Rant about college, or confess something you've been holding in.</p>
     <ul class="rules">
       <li class="reveal" style="--d:550ms">No name.</li>
       <li class="reveal" style="--d:700ms">No roll number.</li>
       <li class="reveal" style="--d:850ms">No formal language required.</li>
     </ul>
-    <p class="note reveal" style="--d:1000ms">Don't post passwords or anyone's personal details. This is not the place for a formal complaint. Those go through <a href="/complaint">the complaint form</a>.</p>
+    <p class="note reveal" style="--d:1000ms">Don't post passwords or anyone's personal details. This is not the place for a formal complaint. Those go through <a href="/complaint">the complaint form</a>. If something feels bigger than a rant, please talk to someone you trust or a college counsellor.</p>
   </section>
 
-  <section class="rant-form reveal" style="--d:300ms" aria-label="Write a rant">
+  <section class="rant-form reveal" style="--d:300ms" aria-label="Write a post">
     {% if posted %}
     <div class="notice notice-ok reveal" role="status">
       <strong>Posted.</strong>
-      <p>No name or roll number was saved with it. See it on the <a href="/rants">rant wall</a>, or keep going.</p>
+      <p>No name or roll number was saved with it. See it on the <a href="/rants">rant wall</a>, or post another.</p>
     </div>
     {% endif %}
     {% if error %}
@@ -27,9 +27,17 @@
     {% endif %}
 
     <form method="post" action="/rantventkaro" novalidate>
+      <fieldset class="kind-picker">
+        <legend>What are you posting?</legend>
+        <div class="kind-options">
+          <label class="kind-opt"><input type="radio" name="kind" value="rant"{% if kind == 'rant' %} checked{% endif %}><span><strong>Rant &amp; vent</strong><small>Let it out. Annoyed, stressed, fed up.</small></span></label>
+          <label class="kind-opt"><input type="radio" name="kind" value="confession"{% if kind == 'confession' %} checked{% endif %}><span><strong>Confession</strong><small>Something you haven't told anyone.</small></span></label>
+        </div>
+      </fieldset>
+
       <div class="field">
-        <label for="content">What's on your mind?</label>
-        <textarea id="content" name="content" class="anchor-text" rows="12" maxlength="{{ rant_max }}" data-counter="rant-count" data-placeholders='{{ placeholders|tojson }}' placeholder="{{ placeholders[0] }}" required>{{ content }}</textarea>
+        <label for="content">{% if kind == 'confession' %}What do you want to confess?{% else %}What's on your mind?{% endif %}</label>
+        <textarea id="content" name="content" class="anchor-text" rows="12" maxlength="{{ rant_max }}" data-counter="rant-count" data-placeholders='{{ prompts|tojson }}' placeholder="{{ prompts[kind][0] }}" required>{{ content }}</textarea>
         <p class="hint"><span id="rant-count">0 / {{ rant_max }}</span> · <a href="/rants">Read what others posted</a></p>
       </div>
       <div class="actions"><button type="submit" class="btn btn-primary">Post anonymously</button></div>

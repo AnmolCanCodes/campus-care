@@ -28,12 +28,12 @@
   {% set rants = recent_rants() %}
   {% if rants %}
   {% set items = rants * ((8 // rants|length) + 1) %}
-  <a class="ticker" href="/rants" aria-label="Read all anonymous rants from students">
+  <a class="ticker" href="/rants" aria-label="Read all anonymous rants and confessions from students">
     <span class="ticker-label">Rant wall</span>
     <span class="ticker-window">
       <span class="ticker-track" style="--t: {{ items|length * 6 }}s">
-        {% for r in items %}<span class="ticker-item">{{ r }}</span>{% endfor %}
-        {% for r in items %}<span class="ticker-item" aria-hidden="true">{{ r }}</span>{% endfor %}
+        {% for r in items %}<span class="ticker-item"><span class="ticker-kind">{{ r.kind|capitalize }}</span>{{ r.text }}</span>{% endfor %}
+        {% for r in items %}<span class="ticker-item" aria-hidden="true"><span class="ticker-kind">{{ r.kind|capitalize }}</span>{{ r.text }}</span>{% endfor %}
       </span>
     </span>
   </a>

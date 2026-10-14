@@ -17,13 +17,13 @@ from sqlalchemy.orm import Session
 
 import models
 from ai import AIError, generate_complaint
-from database import Base, SessionLocal, engine, get_db
+from database import SessionLocal, ensure_schema, get_db
 from mailer import build_mailto, compose_body
 
-Base.metadata.create_all(bind=engine)
+ensure_schema()
 
 app = FastAPI(title="College Care")
-app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+app.mount("/static", StaticFiles(directory=BASE_DIR / "public" / "static"), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 CATEGORIES = [
@@ -33,33 +33,49 @@ CATEGORIES = [
 SEMESTERS = list(range(1, 9))
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 RANT_MAX = 1000
-RANT_PROMPTS = [
-    "The worst thing about this college is...",
-    "Wi-Fi works everywhere except the room where I'm sitting.",
-    "Nobody told us the timetable changed. Again.",
-    "The canteen food deserves its own complaint.",
-    "Attendance rules that nobody can explain...",
-    "Results come out whenever they feel like it.",
-    "The one class I dread every single week...",
-    "Why is the one printer always out of paper?",
-]
+RANT_KINDS = ("rant", "confession")
+PROMPTS = {
+    "rant": [
+        "The worst thing about this college is...",
+        "Wi-Fi works everywhere except the room where I'm sitting.",
+        "Nobody told us the timetable changed. Again.",
+        "The canteen food deserves its own complaint.",
+        "Attendance rules that nobody can explain...",
+        "Results come out whenever they feel like it.",
+        "The one class I dread every single week...",
+        "Why is the one printer always out of paper?",
+    ],
+    "confession": [
+        "I've been pretending to understand this subject all semester.",
+        "The thing I've never told anyone at college is...",
+        "I skipped a class to hide in the library and I'd do it again.",
+        "I'm scared about placements and I haven't told anyone.",
+        "I secretly enjoy a subject everyone else complains about.",
+        "I signed attendance for a friend and I still feel weird about it.",
+        "My biggest college secret is...",
+        "I wish I had said this to a teacher...",
+    ],
+}
 
 
-def rant_prompts():
-    prompts = RANT_PROMPTS[:]
-    random.shuffle(prompts)
-    return prompts
+def prompts():
+    out = {k: v[:] for k, v in PROMPTS.items()}
+    for v in out.values():
+        random.shuffle(v)
+    return out
 
 
 def recent_rants(limit: int = 20):
-    """Short one-line versions of the newest rants, for the bottom ticker."""
+    """Short one-line versions of the newest posts, for the bottom ticker."""
     db = SessionLocal()
     try:
         rows = db.query(models.Rant).order_by(models.Rant.id.desc()).limit(limit).all()
         out = []
         for r in rows:
             text = " ".join(r.content.split())
-            out.append(text if len(text) <= 110 else text[:107].rstrip() + "...")
+            if len(text) > 110:
+                text = text[:107].rstrip() + "..."
+            out.append({"kind": r.kind or "rant", "text": text})
         return out
     except Exception:
         return []
@@ -208,15 +224,24 @@ def result_page(request: Request, id: Optional[int] = None, db: Session = Depend
     return show_result(request, complaint, status_code=200 if complaint else 404)
 
 
-# ---------- Anonymous rant ----------
+# ---------- Anonymous rants and confessions ----------
+def rant_context(**extra):
+    ctx = {"rant_max": RANT_MAX, "prompts": prompts(), "kind": "rant",
+           "posted": False, "error": None, "content": ""}
+    ctx.update(extra)
+    return ctx
+
+
 @app.get("/rantventkaro")
-def rant_page(request: Request, posted: int = 0):
-    return render(request, "rant.html", posted=bool(posted), error=None, content="",
-                  rant_max=RANT_MAX, placeholders=rant_prompts())
+def rant_page(request: Request, posted: int = 0, kind: str = "rant"):
+    kind = kind if kind in RANT_KINDS else "rant"
+    return render(request, "rant.html", **rant_context(posted=bool(posted), kind=kind))
 
 
 @app.post("/rantventkaro")
-def rant_submit(request: Request, content: str = Form(""), db: Session = Depends(get_db)):
+def rant_submit(request: Request, content: str = Form(""), kind: str = Form("rant"),
+                db: Session = Depends(get_db)):
+    kind = kind if kind in RANT_KINDS else "rant"
     text = content.strip()
     error = None
     if len(text) < 5:
@@ -224,17 +249,20 @@ def rant_submit(request: Request, content: str = Form(""), db: Session = Depends
     elif len(text) > RANT_MAX:
         error = f"That is over {RANT_MAX} characters. Trim it down or split it into two posts."
     if error:
-        return render(request, "rant.html", 422, posted=False, error=error,
-                      content=text, rant_max=RANT_MAX, placeholders=rant_prompts())
-    db.add(models.Rant(content=text))  # nothing else is stored with it
+        return render(request, "rant.html", 422, **rant_context(error=error, content=text, kind=kind))
+    db.add(models.Rant(content=text, kind=kind))  # nothing else is stored with it
     db.commit()
-    return RedirectResponse("/rantventkaro?posted=1", status_code=303)
+    return RedirectResponse(f"/rantventkaro?posted=1&kind={kind}", status_code=303)
 
 
 @app.get("/rants")
-def rant_wall(request: Request, db: Session = Depends(get_db)):
-    rants = db.query(models.Rant).order_by(models.Rant.id.desc()).limit(300).all()
-    return render(request, "rants.html", rants=rants)
+def rant_wall(request: Request, kind: Optional[str] = None, db: Session = Depends(get_db)):
+    active = kind if kind in RANT_KINDS else None
+    query = db.query(models.Rant)
+    if active:
+        query = query.filter(models.Rant.kind == active)
+    rants = query.order_by(models.Rant.id.desc()).limit(300).all()
+    return render(request, "rants.html", rants=rants, active=active)
 
 
 if __name__ == "__main__":
